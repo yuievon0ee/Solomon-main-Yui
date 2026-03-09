@@ -975,7 +975,7 @@
         triangle.style.display = "none";
         tagImage.classList.remove("visible");
       } else {
-        triangle.style.display = "block";
+        triangle.style.display = "none";
         tagImage.classList.add("visible");
         switch (getPosition()) {
           case "left-bottom":
@@ -1199,24 +1199,7 @@
           const insetX = FIXED_TAG_INSET * ratioX;
           const insetY = FIXED_TAG_INSET * ratioY;
 
-          ctx.save();
-          ctx.fillStyle = "rgba(0,0,0,0.96)";
-          ctx.beginPath();
-          if (position === "left-bottom") {
-            ctx.moveTo(0, h); ctx.lineTo(0, h - tri); ctx.lineTo(tri, h);
-          }
-          if (position === "left-top") {
-            ctx.moveTo(0, 0); ctx.lineTo(tri, 0); ctx.lineTo(0, tri);
-          }
-          if (position === "right-top") {
-            ctx.moveTo(w, 0); ctx.lineTo(w - tri, 0); ctx.lineTo(w, tri);
-          }
-          if (position === "right-bottom") {
-            ctx.moveTo(w, h); ctx.lineTo(w - tri, h); ctx.lineTo(w, h - tri);
-          }
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
+          // 黑色角落三角形已停用
 
           let x = 0;
           let y = 0;
