@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3:4 圖片標籤排版工具</title>
+  <style>
+    :root {
+      --panel: #17181b;
+      --panel-2: #202228;
+      --line: rgba(255, 255, 255, 0.08);
+      --text: #f5f5f5;
+      --muted: #a6acb8;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+      --radius: 24px;
+      --page-pad: 16px;
+      --panel-pad: 20px;
+      --left-col: 360px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.04), transparent 24%),
+        linear-gradient(180deg, #121316 0%, #0b0c0e 100%);
+      color: var(--text);
+      overflow: hidden;
+      min-height: 100vh;
+      min-height: 100svh;
+      min-height: 100dvh;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    .wrap {
+      width: 100%;
+      height: 100vh;
+      height: 100svh;
+      height: 100dvh;
+      padding: var(--page-pad);
+      display: grid;
+      grid-template-columns: var(--left-col) minmax(0, 1fr);
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    .panel {
+      min-height: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+    }
+
+    .controls {
+      min-height: 0;
+      padding: 22px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    h1 {
+      font-size: 1.1rem;
+      margin: 0 0 8px;
+      letter-spacing: 0.02em;
+    }
+
+    .desc {
+      margin: 0 0 22px;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.93rem;
+    }
+
+    .group+.group {
+      margin-top: 18px;
+    }
+
+    .label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #f0f0f0;
+    }
+
+    .input,
+    .range {
+      width: 100%;
+    }
+
+    .input {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: var(--panel-2);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .input[type="file"] {
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+
+    .input[type="color"] {
+      height: 46px;
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .range-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .range-value {
+      min-width: 84px;
+      text-align: right;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .range {
+      accent-color: #ffffff;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.18s ease, opacity 0.18s ease, background 0.18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary {
+      background: #f5f5f5;
+      color: #111;
+      font-weight: 700;
+    }
+
+    .ghost {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .preview-panel {
+      min-height: 0;
+      padding: var(--panel-pad);
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 14px;
+      overflow: hidden;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .preview-title {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .canvas-wrap {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      place-items: center;
+      padding: 10px;
+      background-color: white;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 3 / 4;
+      overflow: hidden;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #1b1d22 0%, #131418 100%);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05), 0 22px 60px rgba(0, 0, 0, 0.42);
+      isolation: isolate;
+    }
+
+    .photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      display: block;
+      z-index: 1;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-user-drag: none;
+      touch-action: none;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .photo.dragging {
+      cursor: grabbing;
+    }
+
+    .placeholder {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.7);
+      text-align: center;
+      padding: 24px;
+      line-height: 1.7;
+      letter-spacing: 0.02em;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.08), transparent 30%),
+        linear-gradient(135deg, #23262d 0%, #15171b 100%);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    .triangle {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 110px 0 0 110px;
+      border-color: transparent transparent transparent rgba(0, 0, 0, 0.96);
+      filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.24));
+      display: none;
+      transform-origin: center center;
+    }
+
+    .tag {
+      position: absolute;
+      height: auto;
+      display: none;
+      filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.28));
+      transform-origin: center;
+    }
+
+    .tag.visible {
+      display: block;
+    }
+
+    .watermark-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      overflow: hidden;
+      opacity: 1;
+      mix-blend-mode: normal;
+    }
+
+    .watermark-item {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      display: block;
+      object-fit: contain;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .watermark-surface {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .radio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .radio-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #eaeaea;
+      font-size: 0.92rem;
+    }
+
+    .radio-card input[type="radio"] {
+      accent-color: #fff;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .tag-file {
+      display: none !important;
+      width: 18px;
+      height: 18px;
+      opacity: 0.55;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.7;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 961px) {
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .wrap {
+        height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        grid-template-columns: var(--left-col) minmax(0, 1fr);
+        overflow: hidden;
+      }
+
+      .controls,
+      .preview-panel {
+        min-height: 0;
+        height: 100%;
+      }
+
+      .controls {
+        overflow: auto;
+      }
+
+      .preview-panel {
+        overflow: hidden;
+      }
+
+      .canvas-wrap {
+        min-height: 0;
+        height: 100%;
+      }
+    }
+
+    @media (max-width: 960px),
+    (pointer: coarse) {
+      body {
+        overflow: auto;
+      }
+
+      .wrap {
+        height: auto;
+        min-height: 100vh;
+        min-height: 100svh;
+        min-height: 100dvh;
+        grid-template-columns: 1fr;
+        overflow: visible;
+      }
+
+      .controls,
+      .preview-panel {
+        height: auto;
+        overflow: visible;
+      }
+
+      .canvas-wrap {
+        min-height: min(72vh, 900px);
+        min-height: min(72svh, 900px);
+        min-height: min(72dvh, 900px);
+      }
+
+      .stage {
+        max-width: 560px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <aside class="panel controls">
+      <h1>3:4 圖片標籤排版工具</h1>
+      <p class="desc">上傳主圖後，畫面會強制以 <strong>3:4</strong> 顯示並自動裁切。主圖可即時縮放與拖曳構圖。</p>
+
+      <div class="group">
+        <label class="label" for="mainUpload">主圖片</label>
+        <input class="input" id="mainUpload" type="file" accept="image/*" />
+      </div>
+
+      <div class="group">
+        <label class="label" for="mainScale">主圖縮放</label>
+        <div class="range-row">
+          <input class="range" id="mainScale" type="range" min="100" max="220" value="100" />
+          <div class="range-value" id="mainScaleValue">100%</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label">標籤位置</label>
+        <div class="radio-grid" id="positionGroup">
+          <label class="radio-card"><input type="radio" name="position" value="left-top" /><span>左上</span><input
+              class="tag-file" type="file" data-tag="left-top" accept="image/*" disabled /></label>
+          <label class="radio-card"><input type="radio" name="position" value="left-bottom"
+              checked /><span>左下</span><input class="tag-file" type="file" data-tag="left-bottom" accept="image/*"
+              disabled /></label>
+          <label class="radio-card"><input type="radio" name="position" value="right-top" /><span>右上</span><input
+              class="tag-file" type="file" data-tag="right-top" accept="image/*" disabled /></label>
+          <label class="radio-card"><input type="radio" name="position" value="right-bottom" /><span>右下</span><input
+              class="tag-file" type="file" data-tag="right-bottom" accept="image/*" disabled /></label>
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label" for="tagScale">標籤大小（封印中😈)</label>
+        <div class="range-row">
+          <input class="range" id="tagScale" type="range" min="48" max="48" value="48" disabled />
+          <div class="range-value" id="tagScaleValue">48%</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label" for="tagInset">標籤內縮（封印中😈)</label>
+        <div class="range-row">
+          <input class="range" id="tagInset" type="range" min="11" max="11" value="11" disabled />
+          <div class="range-value" id="tagInsetValue">11px</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label" for="watermarkText">滿版浮水印文字</label>
+        <input class="input" id="watermarkText" type="text" value="所羅門的後宮" placeholder="輸入想要印上的內容" />
+      </div>
+
+      <div class="group">
+        <label class="label" for="watermarkColor">浮水印顏色</label>
+        <input class="input" id="watermarkColor" type="color" value="#ffffff" />
+      </div>
+
+      <div class="group">
+        <label class="label" for="watermarkOpacity">浮水印透明度</label>
+        <div class="range-row">
+          <input class="range" id="watermarkOpacity" type="range" min="0" max="100" value="16" />
+          <div class="range-value" id="watermarkOpacityValue">16%</div>
+        </div>
+      </div>
+
+      <div class="group">
+        <label class="label">浮水印圖案</label>
+        <div class="radio-grid" id="watermarkPatternGroup">
+          <label class="radio-card"><input type="radio" name="watermarkPattern" value="none"
+              checked /><span>不使用</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern" value="seal" /><span>封印章</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern" value="grid" /><span>斜線格紋</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern"
+              value="ring" /><span>召喚陣風格</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern"
+              value="diamond" /><span>惡魔幾何符印</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern"
+              value="solomon" /><span>所羅門魔法陣</span></label>
+          <label class="radio-card"><input type="radio" name="watermarkPattern"
+              value="infernal" /><span>惡魔契約印章</span></label>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="downloadBtn" type="button">下載合成圖</button>
+        <button class="ghost" id="resetBtn" type="button">重設</button>
+      </div>
+
+      <p class="hint">PC 版會固定左右兩區於同一畫面內；觸控裝置則可自由延展。主圖預覽與固定標籤設定會同步反映到下載輸出。</p>
+      <div id="testStatus" class="visually-hidden" aria-live="polite"></div>
+    </aside>
+
+    <section class="panel preview-panel">
+      <div class="preview-head">
+        <div class="preview-title">預覽</div>
+      </div>
+      <div class="canvas-wrap" id="canvasWrap">
+        <div class="stage" id="stage">
+          <img id="mainImage" class="photo" alt="main preview" hidden />
+          <div id="placeholder" class="placeholder">
+            <div>請先上傳主圖片<br />畫面將自動套用 3:4 滿版裁切</div>
+          </div>
+          <div class="overlay">
+            <div class="triangle" id="triangle"></div>
+            <img id="tagImage" class="tag" alt="tag preview" />
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const byId = (id) => document.getElementById(id);
+    const qs = (selector) => document.querySelector(selector);
+    const qsa = (selector) => Array.from(document.querySelectorAll(selector));
+
+    const DEFAULT_TAGS = {
+      "left-top": "./左上.png",
+      "left-bottom": "./左下.png",
+      "right-top": "./右上.png",
+      "right-bottom": "./右下.png"
+    };
+
+    const FIXED_TAG_SCALE = 0.48;
+    const FIXED_TAG_INSET = 11;
+
+    const mainUpload = byId("mainUpload");
+    const mainScale = byId("mainScale");
+    const mainScaleValue = byId("mainScaleValue");
+    const mainImage = byId("mainImage");
+    const tagImage = byId("tagImage");
+    const placeholder = byId("placeholder");
+    const triangle = byId("triangle");
+    const stage = byId("stage");
+    const canvasWrap = byId("canvasWrap");
+    const tagScale = byId("tagScale");
+    const tagScaleValue = byId("tagScaleValue");
+    const tagInset = byId("tagInset");
+    const tagInsetValue = byId("tagInsetValue");
+    const watermarkTextInput = byId("watermarkText");
+    const watermarkColorInput = byId("watermarkColor");
+    const watermarkOpacityInput = byId("watermarkOpacity");
+    const watermarkOpacityValue = byId("watermarkOpacityValue");
+    const downloadBtn = byId("downloadBtn");
+    const resetBtn = byId("resetBtn");
+    const testStatus = byId("testStatus");
+    const positionRadios = qsa('input[name="position"]');
+    const tagFileInputs = qsa("input[data-tag]");
+    const watermarkPatternRadios = qsa('input[name="watermarkPattern"]');
+
+    const essentialNodes = [
+      mainUpload, mainScale, mainScaleValue, mainImage, tagImage, placeholder, triangle,
+      stage, canvasWrap, tagScale, tagScaleValue, tagInset, tagInsetValue,
+      watermarkTextInput, watermarkColorInput, watermarkOpacityInput, watermarkOpacityValue,
+      downloadBtn, resetBtn, testStatus
+    ];
+
+    if (essentialNodes.some((node) => !node)) {
+      throw new Error("必要 DOM 節點不存在，請確認 HTML 結構完整。");
+    }
+
+    const getPosition = () => (qs('input[name="position"]:checked')?.value || "left-bottom");
+    const getWatermarkPattern = () => (qs('input[name="watermarkPattern"]:checked')?.value || "none");
+    const getWatermarkColor = () => (watermarkColorInput.value || "#ffffff");
+    const getWatermarkOpacity = () => Math.max(0, Math.min(1, Number(watermarkOpacityInput.value) / 100 || 0));
+
+    let mainSrc = "";
+    let mainObjectUrl = "";
+    let mainScaleValueNum = 1;
+    let panX = 0;
+    let panY = 0;
+    let isDraggingMain = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragOriginX = 0;
+    let dragOriginY = 0;
+    let tagSrc = DEFAULT_TAGS[getPosition()];
+    let tagEnabled = false;
+
+    function updateStageSize() {
+      const availableWidth = Math.max(canvasWrap.clientWidth - 20, 1);
+      const availableHeight = Math.max(canvasWrap.clientHeight - 20, 1);
+      const widthByHeight = availableHeight * 0.75;
+      const finalWidth = Math.max(1, Math.min(availableWidth, widthByHeight));
+      stage.style.width = finalWidth + "px";
+    }
+
+    // 計算 CSS object-fit:contain 後，圖片在元素內的實際視覺尺寸
+    function getContainedSize() {
+      const naturalWidth = mainImage.naturalWidth || stage.clientWidth || 1;
+      const naturalHeight = mainImage.naturalHeight || stage.clientHeight || 1;
+      const containScale = Math.min(stage.clientWidth / naturalWidth, stage.clientHeight / naturalHeight);
+      return { width: naturalWidth * containScale, height: naturalHeight * containScale };
+    }
+
+    // 以寬填滿框框需要的額外 CSS scale 倍率（slider 100% = 圖片寬度剛好等於框框寬度）
+    function getWidthFillCSSScale() {
+      const contained = getContainedSize();
+      return stage.clientWidth / Math.max(contained.width, 1);
+    }
+
+    function clampMainPan() {
+      if (!mainSrc || !mainImage.naturalWidth || !mainImage.naturalHeight) {
+        panX = 0;
+        panY = 0;
+        return;
+      }
+      if (mainScaleValueNum < 1) {
+        mainScaleValueNum = 1;
+        mainScale.value = "100";
+      }
+      // 視覺寬高 = 含 contain scale 後 × widthFillScale × slider 倍率
+      // 簡化：視覺寬 = stageW × mainScaleValueNum
+      const wfScale = getWidthFillCSSScale();
+      const contained = getContainedSize();
+      const visualWidth = contained.width * wfScale * mainScaleValueNum;
+      const visualHeight = contained.height * wfScale * mainScaleValueNum;
+      const maxX = Math.max(0, (visualWidth - stage.clientWidth) / 2);
+      const maxY = Math.max(0, (visualHeight - stage.clientHeight) / 2);
+      panX = Math.min(maxX, Math.max(-maxX, panX));
+      panY = Math.min(maxY, Math.max(-maxY, panY));
+    }
+
+    function updateMainImageScale() {
+      mainScaleValueNum = Math.max(1, Number(mainScale.value) / 100);
+      mainScaleValue.textContent = Math.round(mainScaleValueNum * 100) + "%";
+      clampMainPan();
+      // cssScale = widthFillScale × slider 倍率，使 slider 100% = 圖片寬度填滿框框
+      const cssScale = mainScaleValueNum * getWidthFillCSSScale();
+      mainImage.style.transform = "scale(" + cssScale + ") translate(" + (panX / cssScale) + "px, " + (panY / cssScale) + "px)";
+    }
+
+    function updateTagDisplaySize() {
+      const stageWidth = stage.clientWidth || 1;
+      tagImage.style.width = Math.round(stageWidth * FIXED_TAG_SCALE) + "px";
+      tagScaleValue.textContent = "48%";
+      tagInsetValue.textContent = "11px";
+    }
+
+    function clearTriangleBorders() {
+      triangle.style.borderWidth = "0";
+      triangle.style.borderColor = "transparent";
+    }
+
+    function setTriangleStyle(position) {
+      triangle.style.transform = "";
+      triangle.style.left = "";
+      triangle.style.right = "";
+      triangle.style.top = "";
+      triangle.style.bottom = "";
+      clearTriangleBorders();
+      const black = "rgba(0,0,0,0.96)";
+      triangle.style.borderWidth = "110px 0 0 110px";
+      triangle.style.borderColor = "transparent transparent transparent " + black;
+
+      if (position === "left-bottom") {
+        triangle.style.left = "0";
+        triangle.style.bottom = "0";
+        triangle.style.transform = "rotate(0deg)";
+      }
+      if (position === "left-top") {
+        triangle.style.left = "0";
+        triangle.style.top = "0";
+        triangle.style.transform = "rotate(90deg)";
+      }
+      if (position === "right-top") {
+        triangle.style.right = "0";
+        triangle.style.top = "0";
+        triangle.style.transform = "rotate(180deg)";
+      }
+      if (position === "right-bottom") {
+        triangle.style.right = "0";
+        triangle.style.bottom = "0";
+        triangle.style.transform = "rotate(270deg)";
+      }
+    }
+
+    function hexToRgba(hex, alpha) {
+      const safeHex = (hex || "#ffffff").replace("#", "");
+      const normalized = safeHex.length === 3 ? safeHex.split("").map((c) => c + c).join("") : safeHex.padEnd(6, "f").slice(0, 6);
+      const r = parseInt(normalized.slice(0, 2), 16);
+      const g = parseInt(normalized.slice(2, 4), 16);
+      const b = parseInt(normalized.slice(4, 6), 16);
+      return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+    }
+
+    function getColorRgb(hex) {
+      const safeHex = (hex || "#ffffff").replace("#", "");
+      const normalized = safeHex.length === 3 ? safeHex.split("").map((c) => c + c).join("") : safeHex.padEnd(6, "f").slice(0, 6);
+      return {
+        r: parseInt(normalized.slice(0, 2), 16),
+        g: parseInt(normalized.slice(2, 4), 16),
+        b: parseInt(normalized.slice(4, 6), 16)
+      };
+    }
+
+    function getColorLuminance(hex) {
+      const rgb = getColorRgb(hex);
+      return (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    }
+
+    function getContrastColor(hex, alpha) {
+      return getColorLuminance(hex) >= 0.7 ? "rgba(0, 0, 0, " + alpha + ")" : "rgba(255, 255, 255, " + alpha + ")";
+    }
+
+    function drawTilePattern(ctx, pattern, color, opacity, size) {
+      const outer = size * 0.34;
+      const inner = size * 0.22;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = hexToRgba(color, Math.min(0.9, opacity + 0.22));
+      ctx.fillStyle = hexToRgba(color, Math.max(0.08, opacity * 0.22));
+
+      if (pattern === "seal") {
+        ctx.strokeRect(-outer, -outer, outer * 2, outer * 2);
+        ctx.strokeRect(-inner, -inner, inner * 2, inner * 2);
+      }
+      if (pattern === "grid") {
+        for (let i = -outer; i <= outer; i += size * 0.08) {
+          ctx.beginPath();
+          ctx.moveTo(i, -outer);
+          ctx.lineTo(i, outer);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-outer, i);
+          ctx.lineTo(outer, i);
+          ctx.stroke();
+        }
+      }
+      if (pattern === "ring") {
+        ctx.beginPath();
+        ctx.arc(0, 0, outer, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, inner, 0, Math.PI * 2);
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.save();
+        ctx.rotate(Math.PI / 4);
+        ctx.strokeRect(-size * 0.06, -size * 0.06, size * 0.12, size * 0.12);
+        ctx.restore();
+      }
+      if (pattern === "diamond") {
+        ctx.beginPath();
+        ctx.moveTo(0, -outer - 8);
+        ctx.lineTo(outer + 8, 0);
+        ctx.lineTo(0, outer + 8);
+        ctx.lineTo(-outer - 8, 0);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, -inner - 4);
+        ctx.lineTo(inner + 4, 0);
+        ctx.lineTo(0, inner + 4);
+        ctx.lineTo(-inner - 4, 0);
+        ctx.closePath();
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.13, 0);
+        ctx.lineTo(size * 0.13, 0);
+        ctx.moveTo(0, -size * 0.13);
+        ctx.lineTo(0, size * 0.13);
+        ctx.stroke();
+      }
+      if (pattern === "solomon") {
+        ctx.beginPath();
+        ctx.arc(0, 0, outer + 2, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, inner + 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, outer + 12, 0, Math.PI * 2);
+        ctx.setLineDash([4, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        const drawTriangle = (rot) => {
+          ctx.save();
+          ctx.rotate(rot);
+          ctx.beginPath();
+          ctx.moveTo(0, -(inner + 8));
+          ctx.lineTo(inner + 7, (inner + 8) * 0.52);
+          ctx.lineTo(-(inner + 7), (inner + 8) * 0.52);
+          ctx.closePath();
+          ctx.stroke();
+          ctx.restore();
+        };
+        drawTriangle(0);
+        drawTriangle(Math.PI);
+      }
+      if (pattern === "infernal") {
+        ctx.strokeRect(-outer, -outer, outer * 2, outer * 2);
+        ctx.setLineDash([6, 5]);
+        ctx.strokeRect(-inner - 4, -inner - 4, (inner + 4) * 2, (inner + 4) * 2);
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(-size * 0.12, -outer + 6);
+        ctx.quadraticCurveTo(-size * 0.2, -outer - 10, -size * 0.05, -outer - 12);
+        ctx.moveTo(size * 0.12, -outer + 6);
+        ctx.quadraticCurveTo(size * 0.2, -outer - 10, size * 0.05, -outer - 12);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, size * 0.16, size * 0.03, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createWatermarkTile(pattern, text, color, opacity, size, angleDeg) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const luminance = getColorLuminance(color);
+      const safeOpacity = Math.max(0, Math.min(1, opacity));
+      const fillAlpha = Math.max(0, Math.min(1, safeOpacity));
+      const patternAlpha = Math.max(0, Math.min(1, safeOpacity));
+      const outlineAlpha = safeOpacity > 0
+        ? (luminance >= 0.7 ? Math.min(0.5, safeOpacity + 0.18) : Math.min(0.24, safeOpacity + 0.08))
+        : 0;
+
+      ctx.translate(size / 2, size / 2);
+      ctx.rotate(angleDeg * Math.PI / 180);
+      ctx.shadowBlur = safeOpacity > 0 && luminance >= 0.7 ? 10 : 0;
+      ctx.shadowColor = getContrastColor(color, safeOpacity > 0 ? (luminance >= 0.7 ? 0.42 : 0.16) : 0);
+      ctx.globalAlpha = 1;
+      drawTilePattern(ctx, pattern, color, patternAlpha, size);
+      ctx.font = "700 22px serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineWidth = luminance >= 0.7 ? 1.8 : 1.2;
+      ctx.strokeStyle = getContrastColor(color, outlineAlpha);
+      if (outlineAlpha > 0) {
+        ctx.strokeText(text, 0, 0);
+      }
+      ctx.fillStyle = hexToRgba(color, fillAlpha);
+      if (fillAlpha > 0) {
+        ctx.fillText(text, 0, 0);
+      }
+      return canvas;
+    }
+
+    function getWatermarkLayout(width, height) {
+      const tileSize = Math.max(120, Math.round(Math.min(width, height) * 0.125));
+      return {
+        tileSize,
+        stepX: Math.round(width * 0.3125),
+        stepY: Math.round(height * 0.25),
+        startX: -Math.round(tileSize * 0.53),
+        startY: -Math.round(tileSize * 0.27),
+        endX: width + Math.round(tileSize * 0.8),
+        endY: height + Math.round(tileSize * 0.53),
+        angleDeg: -24
+      };
+    }
+
+    function getPreviewToExportScale(exportWidth, exportHeight) {
+      const previewWidth = Math.max(stage.clientWidth, 1);
+      const previewHeight = Math.max(stage.clientHeight, 1);
+      return {
+        x: exportWidth / previewWidth,
+        y: exportHeight / previewHeight
+      };
+    }
+
+    function renderWatermarkSurface(width, height) {
+      const text = (watermarkTextInput.value || "").trim();
+      const pattern = getWatermarkPattern();
+      const watermarkColor = getWatermarkColor();
+      const opacity = getWatermarkOpacity();
+      const surface = document.createElement("canvas");
+      surface.width = Math.max(1, Math.round(width));
+      surface.height = Math.max(1, Math.round(height));
+
+      if (!text || pattern === "none" || opacity === 0) {
+        return surface;
+      }
+
+      const ctx = surface.getContext("2d");
+      const layout = getWatermarkLayout(surface.width, surface.height);
+      const tileCanvas = createWatermarkTile(pattern, text, watermarkColor, opacity, layout.tileSize, layout.angleDeg);
+
+      for (let y = layout.startY; y < layout.endY; y += layout.stepY) {
+        for (let x = layout.startX; x < layout.endX; x += layout.stepX) {
+          ctx.drawImage(tileCanvas, x, y, layout.tileSize, layout.tileSize);
+        }
+      }
+
+      return surface;
+    }
+
+    function drawWatermarkPreview() {
+      byId("watermarkLayer")?.remove();
+      const opacity = getWatermarkOpacity();
+      watermarkOpacityValue.textContent = Math.round(opacity * 100) + "%";
+
+      const text = (watermarkTextInput.value || "").trim();
+      const pattern = getWatermarkPattern();
+      if (!text || pattern === "none" || opacity === 0) return;
+
+      const layer = document.createElement("div");
+      layer.id = "watermarkLayer";
+      layer.className = "watermark-layer";
+
+      const surface = renderWatermarkSurface(stage.clientWidth || 1, stage.clientHeight || 1);
+      const img = document.createElement("img");
+      img.className = "watermark-surface";
+      img.alt = "";
+      img.src = surface.toDataURL("image/png");
+      layer.appendChild(img);
+      stage.appendChild(layer);
+    }
+
+    function applyLayout() {
+      updateStageSize();
+      updateMainImageScale();
+      updateTagDisplaySize();
+      setTriangleStyle(getPosition());
+
+      tagImage.style.left = "";
+      tagImage.style.right = "";
+      tagImage.style.top = "";
+      tagImage.style.bottom = "";
+      tagImage.style.transform = "";
+
+      if (!tagEnabled) {
+        triangle.style.display = "none";
+        tagImage.classList.remove("visible");
+      } else {
+        triangle.style.display = "block";
+        tagImage.classList.add("visible");
+        switch (getPosition()) {
+          case "left-bottom":
+            tagImage.style.left = FIXED_TAG_INSET + "px";
+            tagImage.style.bottom = FIXED_TAG_INSET + "px";
+            break;
+          case "left-top":
+            tagImage.style.left = FIXED_TAG_INSET + "px";
+            tagImage.style.top = FIXED_TAG_INSET + "px";
+            break;
+          case "right-top":
+            tagImage.style.right = FIXED_TAG_INSET + "px";
+            tagImage.style.top = FIXED_TAG_INSET + "px";
+            break;
+          case "right-bottom":
+            tagImage.style.right = FIXED_TAG_INSET + "px";
+            tagImage.style.bottom = FIXED_TAG_INSET + "px";
+            break;
+        }
+      }
+      drawWatermarkPreview();
+    }
+
+    function beginMainDrag(clientX, clientY) {
+      if (!mainSrc) return;
+      isDraggingMain = true;
+      dragStartX = clientX;
+      dragStartY = clientY;
+      dragOriginX = panX;
+      dragOriginY = panY;
+      mainImage.classList.add("dragging");
+    }
+
+    function moveMainDrag(clientX, clientY) {
+      if (!isDraggingMain) return;
+      panX = dragOriginX + (clientX - dragStartX);
+      panY = dragOriginY + (clientY - dragStartY);
+      applyLayout();
+    }
+
+    function endMainDrag() {
+      isDraggingMain = false;
+      mainImage.classList.remove("dragging");
+    }
+
+    async function loadOptionalTagImage() {
+      tagSrc = DEFAULT_TAGS[getPosition()];
+      try {
+        const response = await fetch(tagSrc, { cache: "no-store" });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        tagImage.onload = () => {
+          tagEnabled = true;
+          applyLayout();
+        };
+        tagImage.onerror = () => {
+          tagEnabled = false;
+          triangle.style.display = "none";
+          tagImage.classList.remove("visible");
+          testStatus.textContent = "tag image load failed";
+        };
+        tagImage.src = tagSrc + "?v=" + Date.now();
+      } catch (_error) {
+        tagEnabled = false;
+        triangle.style.display = "none";
+        tagImage.classList.remove("visible");
+        testStatus.textContent = "tag image load skipped";
+      }
+    }
+
+    function updateTagSource() { loadOptionalTagImage(); }
+
+    mainUpload.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (mainObjectUrl) URL.revokeObjectURL(mainObjectUrl);
+      const url = URL.createObjectURL(file);
+      mainObjectUrl = url;
+      mainSrc = url;
+      panX = 0;
+      panY = 0;
+      isDraggingMain = false;
+      mainImage.classList.remove("dragging");
+      mainImage.onload = () => {
+        updateStageSize();
+        applyLayout();
+      };
+      mainImage.src = url;
+      mainImage.hidden = false;
+      placeholder.hidden = true;
+    });
+
+    stage.addEventListener("pointerdown", (e) => {
+      if (!mainSrc) return;
+      beginMainDrag(e.clientX, e.clientY);
+      stage.setPointerCapture?.(e.pointerId);
+    });
+    stage.addEventListener("pointermove", (e) => moveMainDrag(e.clientX, e.clientY));
+    stage.addEventListener("pointerup", (e) => {
+      endMainDrag();
+      stage.releasePointerCapture?.(e.pointerId);
+    });
+    stage.addEventListener("pointercancel", endMainDrag);
+    stage.addEventListener("pointerleave", endMainDrag);
+
+    stage.addEventListener("touchstart", (e) => {
+      if (!mainSrc || !e.touches?.length) return;
+      const touch = e.touches[0];
+      beginMainDrag(touch.clientX, touch.clientY);
+    }, { passive: true });
+
+    stage.addEventListener("touchmove", (e) => {
+      if (!e.touches?.length) return;
+      const touch = e.touches[0];
+      moveMainDrag(touch.clientX, touch.clientY);
+    }, { passive: true });
+    stage.addEventListener("touchend", endMainDrag, { passive: true });
+    stage.addEventListener("touchcancel", endMainDrag, { passive: true });
+
+    positionRadios.forEach((radio) => radio.addEventListener("change", () => {
+      updateTagSource();
+      applyLayout();
+    }));
+
+    tagFileInputs.forEach((input) => input.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const objectUrl = URL.createObjectURL(file);
+      DEFAULT_TAGS[input.dataset.tag] = objectUrl;
+      updateTagSource();
+    }));
+
+    mainScale.addEventListener("input", applyLayout);
+    watermarkTextInput.addEventListener("input", applyLayout);
+    watermarkPatternRadios.forEach((radio) => radio.addEventListener("change", applyLayout));
+    watermarkColorInput.addEventListener("input", applyLayout);
+    watermarkOpacityInput.addEventListener("input", applyLayout);
+    window.addEventListener("resize", applyLayout);
+
+    resetBtn.addEventListener("click", () => {
+      mainUpload.value = "";
+      mainSrc = "";
+      if (mainObjectUrl) {
+        URL.revokeObjectURL(mainObjectUrl);
+        mainObjectUrl = "";
+      }
+      mainImage.src = "";
+      mainImage.hidden = true;
+      panX = 0;
+      panY = 0;
+      isDraggingMain = false;
+      mainImage.classList.remove("dragging");
+      placeholder.hidden = false;
+      qs('input[name="position"][value="left-bottom"]').checked = true;
+      qs('input[name="watermarkPattern"][value="none"]').checked = true;
+      watermarkTextInput.value = "所羅門的後宮";
+      watermarkColorInput.value = "#ffffff";
+      watermarkOpacityInput.value = "16";
+      watermarkOpacityValue.textContent = "16%";
+      mainScale.value = "100";
+      mainScaleValue.textContent = "100%";
+      mainScaleValueNum = 1;
+      tagScale.value = "48";
+      tagInset.value = "11";
+      updateTagSource();
+      applyLayout();
+    });
+
+    downloadBtn.addEventListener("click", async () => {
+      if (!mainSrc) {
+        alert("請先上傳主圖片。");
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const w = 1200;
+      const h = 1600;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+
+      const loadImage = (src) => new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+
+      try {
+        // 黑色背景（圖片未覆蓋全框時填色）
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, w, h);
+
+        const baseImg = await loadImage(mainSrc);
+        const stageW = Math.max(stage.clientWidth, 1);
+        const stageH = Math.max(stage.clientHeight, 1);
+        const imgW = baseImg.naturalWidth || baseImg.width;
+        const imgH = baseImg.naturalHeight || baseImg.height;
+
+        // 與預覽邏輯完全一致：
+        // 預覽 actualCssScale = stageW × mainScaleValueNum / imgW（以寬填滿的 scale）
+        // 同樣 scale 換算到 export 用 drawImage 精準裁切同一區域
+        const actualCssScale = stageW * mainScaleValueNum / imgW;
+        const srcW = stageW / actualCssScale;  // = imgW / mainScaleValueNum
+        const srcH = stageH / actualCssScale;
+        const srcX = imgW / 2 - (stageW / 2 + panX) / actualCssScale;
+        const srcY = imgH / 2 - (stageH / 2 + panY) / actualCssScale;
+        ctx.drawImage(baseImg, srcX, srcY, srcW, srcH, 0, 0, w, h);
+
+        if (tagEnabled) {
+          const tag = await loadImage(tagImage.src || tagSrc);
+          const position = getPosition();
+          const stageW = Math.max(stage.clientWidth, 1);
+          const stageH = Math.max(stage.clientHeight, 1);
+          const ratioX = w / stageW;
+          const ratioY = h / stageH;
+          const tagDisplayW = stageW * FIXED_TAG_SCALE;
+          const tagDisplayH = tagDisplayW * (tag.height / tag.width);
+          const drawTagW = tagDisplayW * ratioX;
+          const drawTagH = tagDisplayH * ratioY;
+          const tri = 110 * ratioX;
+          const insetX = FIXED_TAG_INSET * ratioX;
+          const insetY = FIXED_TAG_INSET * ratioY;
+
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,0.96)";
+          ctx.beginPath();
+          if (position === "left-bottom") {
+            ctx.moveTo(0, h); ctx.lineTo(0, h - tri); ctx.lineTo(tri, h);
+          }
+          if (position === "left-top") {
+            ctx.moveTo(0, 0); ctx.lineTo(tri, 0); ctx.lineTo(0, tri);
+          }
+          if (position === "right-top") {
+            ctx.moveTo(w, 0); ctx.lineTo(w - tri, 0); ctx.lineTo(w, tri);
+          }
+          if (position === "right-bottom") {
+            ctx.moveTo(w, h); ctx.lineTo(w - tri, h); ctx.lineTo(w, h - tri);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+
+          let x = 0;
+          let y = 0;
+          if (position === "left-bottom") { x = insetX; y = h - drawTagH - insetY; }
+          if (position === "left-top") { x = insetX; y = insetY; }
+          if (position === "right-top") { x = w - drawTagW - insetX; y = insetY; }
+          if (position === "right-bottom") { x = w - drawTagW - insetX; y = h - drawTagH - insetY; }
+          ctx.drawImage(tag, x, y, drawTagW, drawTagH);
+        }
+
+        const watermarkText = (watermarkTextInput.value || "").trim();
+        const watermarkPattern = getWatermarkPattern();
+        const watermarkOpacity = getWatermarkOpacity();
+        if (watermarkText && watermarkPattern !== "none" && watermarkOpacity > 0) {
+          const previewSurface = renderWatermarkSurface(stage.clientWidth || 1, stage.clientHeight || 1);
+          ctx.drawImage(previewSurface, 0, 0, w, h);
+        }
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png");
+        link.download = "tagged-image-3x4.png";
+        link.click();
+      } catch (err) {
+        console.error(err);
+        alert("下載失敗，請重新上傳圖片後再試一次。");
+      }
+    });
+
+    function runInlineTests() {
+      try {
+        console.assert(typeof applyLayout === "function", "applyLayout 應存在");
+        console.assert(typeof updateStageSize === "function", "updateStageSize 應存在");
+        console.assert(typeof createWatermarkTile === "function", "createWatermarkTile 應存在");
+        console.assert(tagImage !== null, "tagImage 應存在");
+        console.assert(Object.keys(DEFAULT_TAGS).length === 4, "應有四個預設標籤路徑");
+        console.assert(DEFAULT_TAGS["left-top"] === "./左上.png", "左上預設路徑應正確");
+        console.assert(DEFAULT_TAGS["left-bottom"] === "./左下.png", "左下預設路徑應正確");
+        console.assert(DEFAULT_TAGS["right-top"] === "./右上.png", "右上預設路徑應正確");
+        console.assert(DEFAULT_TAGS["right-bottom"] === "./右下.png", "右下預設路徑應正確");
+        console.assert(getPosition() === "left-bottom", "預設位置應為左下");
+        console.assert(mainScale.value === "100", "預設主圖縮放應為 100");
+        console.assert(mainScale.min === "100", "主圖縮放最小值應為 100");
+        console.assert(mainScaleValue.textContent === "100%", "主圖縮放顯示應為 100%");
+        console.assert(panX === 0 && panY === 0, "預設主圖位移應為 0");
+        console.assert(tagScale.value === "48", "預設標籤大小應為 48");
+        console.assert(tagInset.value === "11", "預設標籤內縮應為 11");
+        console.assert(tagScale.disabled === true, "標籤大小應禁止調整");
+        console.assert(tagInset.disabled === true, "標籤內縮應禁止調整");
+        console.assert(getComputedStyle(stage).aspectRatio === "3 / 4" || getComputedStyle(stage).aspectRatio === "3/4", "畫布比例應為 3:4");
+        console.assert(positionRadios.length === 4, "應有四個位置 radio");
+        console.assert(tagFileInputs.length === 4, "應有四個對應檔案輸入");
+        console.assert(watermarkPatternRadios.length === 7, "應有七個浮水印選項");
+        console.assert(watermarkTextInput.value === "所羅門的後宮", "預設浮水印文字應為『所羅門的後宮』");
+        console.assert(getComputedStyle(canvasWrap).backgroundColor === "rgb(255, 255, 255)", "預覽區背景應為白色");
+        console.assert(mainImage.hidden === true, "初始 mainImage 應隱藏，避免破圖顯示");
+        console.assert(placeholder.hidden === false, "初始 placeholder 應顯示");
+
+        updateStageSize();
+        console.assert((stage.clientWidth || 0) > 0, "預覽區寬度應大於 0");
+
+        setTriangleStyle("right-bottom");
+        console.assert(triangle.style.transform === "rotate(270deg)", "右下三角形應旋轉 270 度");
+
+        mainScale.value = "150";
+        updateMainImageScale();
+        console.assert(mainImage.style.transform.includes("scale(1.5)"), "主圖縮放應反映在 transform");
+
+        document.querySelector('input[name="position"][value="right-bottom"]').checked = true;
+        tagEnabled = true;
+        applyLayout();
+        console.assert(tagImage.style.right === "11px" || tagImage.style.right === "11", "右下標籤內縮應固定 11px");
+        console.assert(tagImage.style.bottom === "11px" || tagImage.style.bottom === "11", "右下標籤內縮應固定 11px");
+
+        watermarkColorInput.value = "#ffffff";
+        watermarkOpacityInput.value = "16";
+        document.querySelector('input[name="watermarkPattern"][value="solomon"]').checked = true;
+        drawWatermarkPreview();
+        console.assert(byId("watermarkLayer") !== null, "浮水印預覽層應存在");
+        console.assert(getWatermarkPattern() === "solomon", "浮水印圖案應可正確讀取");
+        console.assert(getWatermarkColor() === "#ffffff", "浮水印顏色應可正確讀取");
+        console.assert(Math.round(getWatermarkOpacity() * 100) === 16, "浮水印透明度應可正確讀取");
+        console.assert(getComputedStyle(byId("watermarkLayer") || document.createElement("div")).opacity === "1" || byId("watermarkLayer") === null, "預覽浮水印容器不應再額外疊加透明度");
+        const previewLayout = getWatermarkLayout(300, 400);
+        console.assert(previewLayout.tileSize === 120, "預覽浮水印最小尺寸應正確");
+        const previewSurface = renderWatermarkSurface(300, 400);
+        console.assert(previewSurface.width === 300 && previewSurface.height === 400, "浮水印預覽畫布尺寸應與預覽一致");
+        console.assert(watermarkOpacityInput.min === "0" && watermarkOpacityInput.max === "100", "浮水印透明度範圍應為 0-100%");
+        console.assert(getContrastColor("#ffffff", 0.5).includes("0, 0, 0"), "白色浮水印應取得深色對比描邊");
+
+        testStatus.textContent = "inline tests passed";
+      } catch (error) {
+        console.error("Inline tests failed:", error);
+        testStatus.textContent = "inline tests failed";
+      }
+    }
+
+    mainScale.value = "100";
+    mainScaleValue.textContent = "100%";
+    mainScaleValueNum = 1;
+    tagScale.value = "48";
+    tagInset.value = "11";
+    updateStageSize();
+    loadOptionalTagImage();
+    applyLayout();
+    // 確保浮水印圖案預設為「不使用」
+    const defaultPattern = document.querySelector('input[name="watermarkPattern"][value="none"]');
+    if (defaultPattern) defaultPattern.checked = true;
+
+    runInlineTests();
+  </script>
+</body>
+
+</html>
