@@ -885,7 +885,8 @@
       ctx.shadowColor = getContrastColor(color, safeOpacity > 0 ? (luminance >= 0.7 ? 0.42 : 0.16) : 0);
       ctx.globalAlpha = 1;
       drawTilePattern(ctx, pattern, color, patternAlpha, size);
-      ctx.font = "700 22px serif";
+      const fontSize = Math.max(10, Math.round(size * 0.175));
+      ctx.font = "700 " + fontSize + "px serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.lineWidth = luminance >= 0.7 ? 1.8 : 1.2;
