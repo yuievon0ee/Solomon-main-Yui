@@ -511,6 +511,14 @@
       </div>
 
       <div class="group">
+        <label class="label" for="watermarkSize">浮水印大小</label>
+        <div class="range-row">
+          <input class="range" id="watermarkSize" type="range" min="50" max="200" value="100" />
+          <div class="range-value" id="watermarkSizeValue">100%</div>
+        </div>
+      </div>
+
+      <div class="group">
         <label class="label">浮水印圖案</label>
         <div class="radio-grid" id="watermarkPatternGroup">
           <label class="radio-card"><input type="radio" name="watermarkPattern" value="none"
@@ -588,6 +596,8 @@
     const watermarkColorInput = byId("watermarkColor");
     const watermarkOpacityInput = byId("watermarkOpacity");
     const watermarkOpacityValue = byId("watermarkOpacityValue");
+    const watermarkSizeInput = byId("watermarkSize");
+    const watermarkSizeValue = byId("watermarkSizeValue");
     const downloadBtn = byId("downloadBtn");
     const resetBtn = byId("resetBtn");
     const testStatus = byId("testStatus");
@@ -599,6 +609,7 @@
       mainUpload, mainScale, mainScaleValue, mainImage, tagImage, placeholder, triangle,
       stage, canvasWrap, tagScale, tagScaleValue, tagInset, tagInsetValue,
       watermarkTextInput, watermarkColorInput, watermarkOpacityInput, watermarkOpacityValue,
+      watermarkSizeInput, watermarkSizeValue,
       downloadBtn, resetBtn, testStatus
     ];
 
@@ -610,6 +621,7 @@
     const getWatermarkPattern = () => (qs('input[name="watermarkPattern"]:checked')?.value || "none");
     const getWatermarkColor = () => (watermarkColorInput.value || "#ffffff");
     const getWatermarkOpacity = () => Math.max(0, Math.min(1, Number(watermarkOpacityInput.value) / 100 || 0));
+    const getWatermarkSizeRatio = () => Math.max(0.5, Math.min(2, Number(watermarkSizeInput.value) / 100 || 1));
 
     let mainSrc = "";
     let mainObjectUrl = "";
@@ -889,11 +901,13 @@
     }
 
     function getWatermarkLayout(width, height) {
-      const tileSize = Math.max(120, Math.round(Math.min(width, height) * 0.125));
+      const sizeRatio = getWatermarkSizeRatio();
+      const baseTile = Math.max(120, Math.round(Math.min(width, height) * 0.125));
+      const tileSize = Math.round(baseTile * sizeRatio);
       return {
         tileSize,
-        stepX: Math.round(width * 0.3125),
-        stepY: Math.round(height * 0.25),
+        stepX: Math.round(width * 0.3125 * sizeRatio),
+        stepY: Math.round(height * 0.25 * sizeRatio),
         startX: -Math.round(tileSize * 0.53),
         startY: -Math.round(tileSize * 0.27),
         endX: width + Math.round(tileSize * 0.8),
@@ -941,6 +955,7 @@
       byId("watermarkLayer")?.remove();
       const opacity = getWatermarkOpacity();
       watermarkOpacityValue.textContent = Math.round(opacity * 100) + "%";
+      watermarkSizeValue.textContent = watermarkSizeInput.value + "%";
 
       const text = (watermarkTextInput.value || "").trim();
       const pattern = getWatermarkPattern();
@@ -1112,6 +1127,7 @@
     watermarkPatternRadios.forEach((radio) => radio.addEventListener("change", applyLayout));
     watermarkColorInput.addEventListener("input", applyLayout);
     watermarkOpacityInput.addEventListener("input", applyLayout);
+    watermarkSizeInput.addEventListener("input", applyLayout);
     window.addEventListener("resize", applyLayout);
 
     resetBtn.addEventListener("click", () => {
@@ -1134,6 +1150,8 @@
       watermarkColorInput.value = "#ffffff";
       watermarkOpacityInput.value = "16";
       watermarkOpacityValue.textContent = "16%";
+      watermarkSizeInput.value = "100";
+      watermarkSizeValue.textContent = "100%";
       mainScale.value = "100";
       mainScaleValue.textContent = "100%";
       mainScaleValueNum = 1;
